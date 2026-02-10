@@ -26,6 +26,7 @@ export async function registerRoutes(
     try {
       const data = insertProfileSchema.parse({
         ...req.body,
+        birthDate: req.body.birthDate ? new Date(req.body.birthDate) : undefined,
         userId: (req.user as any).claims.sub
       });
       const profile = await storage.createProfile(data);
@@ -42,7 +43,14 @@ export async function registerRoutes(
   app.delete(api.profiles.delete.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send();
     const id = parseInt(req.params.id);
-    // TODO: Verify ownership
+    
+    const profile = await storage.getProfile(id);
+    if (!profile) return res.status(404).send();
+    
+    if (profile.userId !== (req.user as any).claims.sub) {
+      return res.status(403).send();
+    }
+
     await storage.deleteProfile(id);
     res.status(204).send();
   });
