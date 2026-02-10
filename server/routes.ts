@@ -174,7 +174,7 @@ export async function registerRoutes(
   });
 
   // Seed Data Endpoint (for development)
-  app.post("/api/seed", async (req, res) => {
+  app.get("/api/seed", async (req, res) => {
     const existingTests = await storage.getTests();
     if (existingTests.length === 0) {
       const { db } = await import("./db");
