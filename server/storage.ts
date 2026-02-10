@@ -26,6 +26,7 @@ export interface IStorage {
   createTestResult(result: InsertTestResult): Promise<TestResult>;
   getTestResults(userId: string): Promise<(TestResult & { test: Test; profile: Profile })[]>;
   getTestResult(id: number): Promise<(TestResult & { test: Test; profile: Profile }) | undefined>;
+  getAllTestResults(): Promise<(TestResult & { test: Test; profile: Profile; user: { firstName: string | null; email: string | null } })[]>;
 
   // Community
   getPosts(): Promise<(Post & { user: { firstName: string | null } })[]>;
@@ -145,6 +146,22 @@ export class DatabaseStorage implements IStorage {
   async createComment(comment: InsertComment): Promise<Comment> {
     const [newComment] = await db.insert(comments).values(comment).returning();
     return newComment;
+  }
+
+  async getAllTestResults(): Promise<(TestResult & { test: Test; profile: Profile; user: { firstName: string | null; email: string | null } })[]> {
+    return await db.query.testResults.findMany({
+      with: {
+        test: true,
+        profile: true,
+        user: {
+          columns: {
+            firstName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: desc(testResults.conductedAt)
+    });
   }
 }
 

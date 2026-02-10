@@ -144,6 +144,34 @@ export async function registerRoutes(
       res.status(400).send();
     }
   });
+  
+  // --- Admin ---
+  app.get("/api/admin/results", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send();
+    // In a real app, check for admin role
+    // const user = req.user as any;
+    // if (user.role !== 'admin') return res.status(403).send();
+    
+    // For now, allow all authenticated users for demo purposes or check strict equality if role is implemented
+    const user = req.user as any;
+    if (user.role !== 'admin') {
+       // Optional: Auto-promote first user or specific user for testing if needed, 
+       // but for now let's enforce 403 if not admin, or just allow it if we want to test easily.
+       // Let's enforce it but we need a way to make someone admin.
+       // For this MVP, let's allow it if email matches validation or just comment it out.
+       // Reverting to: allow if authenticated for now to demonstrate, or strict check.
+       // User requested "Admin", so let's stick to the plan of having a role.
+       // If I can't easily set the role, I might need a seed for that too.
+       // Let's check if user.role is available (it should be added to schema).
+       
+       if ((req.user as any).role !== 'admin') {
+         return res.status(403).json({ message: "Admin access required" });
+       }
+    }
+    
+    const results = await storage.getAllTestResults();
+    res.json(results);
+  });
 
   // Seed Data Endpoint (for development)
   app.post("/api/seed", async (req, res) => {
@@ -187,6 +215,79 @@ export async function registerRoutes(
         { testId: test2.id, text: "우리는 육아와 가사를 공평하게 분담한다.", type: "likert", order: 4, options: [] },
         { testId: test2.id, text: "다시 태어나도 지금의 배우자와 결혼하고 싶다.", type: "likert", order: 5, options: [] },
       ]);
+      
+      // Test 3: STS 6-Factor Temperament Test
+      const [test3] = await db.insert(tests).values({
+        title: "STS 6요인 기질검사",
+        description: "아이의 타고난 기질을 6가지 요인(활동성, 조심성, 긍정정서, 부정정서, 사회적민감성, 주의지속성)으로 분석합니다.",
+        category: "child_development",
+        questionCount: 41,
+        estimatedTime: 10,
+        coverImage: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9"
+      }).returning();
+
+      const likertOptions = [
+        {label: "전혀 그렇지 않다", score: 1}, 
+        {label: "드물게 그렇다", score: 2}, 
+        {label: "때때로 그렇다", score: 3}, 
+        {label: "자주 그렇다", score: 4}, 
+        {label: "거의 항상 그렇다", score: 5}
+      ];
+
+      const stsQuestions = [
+        "주변이 소란스러워도 하던 놀이를 계속한다.",
+        "기분이 나쁠 때보다는 좋을 때가 더 많다.",
+        "목욕할 때 물을 튀기거나 발로 차는 등 많이 움직인다.",
+        "새로운 옷(또는 신발)을 입지 않으려고 한다.",
+        "뜻대로 되지 않으면 쉽게 운다.",
+        "가끔 보는 지인이 집에 오면 낯을 가린다.",
+        "다른 아이가 울면 따라 운다.",
+        "주의력이 요구되는 활동(퍼즐이나 책 등)을 좋아한다.",
+        "도전적인 신체 활동을 좋아한다(예: 높은 곳에 기어오르기).",
+        "항상 미소 짓거나 웃는다.",
+        "컨디션이 좋지 않을 때 지나치게 칭얼거린다.",
+        "낯선 성인을 만났을 때 엄마에게 매달린다.",
+        "잠자고 일어날 때면 짜증을 내거나 운다.",
+        "하루 중 대부분의 시간을 기분 좋게 보낸다.",
+        "놀이터나 키즈카페에서 놀 때 행동이 재빠르다.",
+        "놀이할 때 잘 웃는다.",
+        "익숙하지 않은 상황을 피하려고 한다.",
+        "처음 보는 친구에게 다가가기 어려워한다.",
+        "다른 사람이 다치는 것을 보면 움츠러든다.",
+        "새로운 활동을 시작하는 것을 주저한다.",
+        "사물보다 사람에게 관심이 더 많다.",
+        "처음 먹어보는 음식은 먹지 않으려고 한다.",
+        "잠들기 전에 잠투정이 있다.",
+        "사람들의 외적인 변화에 관심을 보인다(예: 안경, 수염, 헤어스타일, 액세서리 등).",
+        "매일 밖에 나가서 놀자고 한다.",
+        "좋아하는 장난감을 한참을 가지고 논다.",
+        "동화책을 읽어주면 주의를 기울여 듣는다.",
+        "잠자리가 바뀌면 잠들기 힘들다.",
+        "“안 돼”라고 하면 하던 행동을 멈춘다.",
+        "유모차나 카시트에서 계속 움직인다.",
+        "잠깐 기다리라고 하면 참을 수 있다.",
+        "새로운 상황에 적응하는 데 시간이 오래 걸린다.",
+        "아파하는 사람을 보면 얼굴을 찡그린다.",
+        "별일 아닌 것에도 즐거워한다.",
+        "옷을 입힐 때 많이 움직인다.",
+        "자주 칭얼거리거나 짜증을 낸다.",
+        "양육자의 말을 귀 기울여 듣는다.",
+        "사람들의 표정을 빤히 살펴보는 편이다.",
+        "낯설거나 새로운 장소에 가면 불편해한다.",
+        "한 번 징징거림이 시작되면 오래간다.",
+        "가만히 앉아 있지 않고 계속 움직인다.",
+        "아는 사람을 만나면 웃으며 반긴다."
+      ];
+
+      await db.insert(questions).values(
+        stsQuestions.map((text, index) => ({
+          testId: test3.id,
+          text,
+          type: "likert",
+          order: index + 1,
+          options: likertOptions
+        }))
+      );
       
       res.json({ message: "Seeded" });
     } else {
