@@ -31,7 +31,7 @@ export const tests = pgTable("tests", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  category: text("category").notNull(), // 'parenting', 'child_development', 'couple', etc.
+  category: text("category").notNull(), // 'parenting', 'child_development', 'couple', 'temperament' etc.
   questionCount: integer("question_count").notNull(),
   estimatedTime: integer("estimated_time").notNull(), // in minutes
   coverImage: text("cover_image"),
