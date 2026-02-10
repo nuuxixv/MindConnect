@@ -86,6 +86,8 @@ export default {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+        heading: ["'Gowun Dodum'", "serif"],
+        body: ["'Noto Sans KR'", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {
